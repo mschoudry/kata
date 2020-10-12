@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Appenders>
+        <Console name="R">
+            <PatternLayout>
+                <Pattern>[[ %d [%t] [user : %x] %-5p (%F:%L) ]] - %m%n</Pattern>
+            </PatternLayout>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="info">
+          <AppenderRef ref="R"/>
+        </Root>
+    </Loggers>
+</Configuration>

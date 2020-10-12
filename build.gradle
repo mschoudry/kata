@@ -1,0 +1,136 @@
+import org.gradle.internal.os.OperatingSystem
+
+
+println 'Building App :: '+getProject().getName()
+
+buildscript {
+	ext {
+		springBootVersion = '2.3.2.RELEASE'
+	}
+    repositories {
+            maven {
+                  url "${maven_url}"
+                  credentials {
+                        username = "${artifactory_user}"
+                        password = "${artifactory_password}"
+                  }
+            }
+      }
+      dependencies {
+                classpath "junit:junit:+"
+				classpath "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
+				classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:3.0"
+      }
+}
+
+apply plugin: 'java-library'
+apply plugin: 'groovy'
+apply plugin: 'org.sonarqube'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'eclipse'
+
+group = 'com.kata.demo'
+version = project.property('build_version')
+sourceCompatibility = 1.8
+
+defaultTasks 'bootRun'
+
+bootJar {
+	mainClassName = 'com.kata.demo.MainClass'
+	launchScript()
+}
+
+
+
+
+
+eclipse {
+      classpath { plusConfigurations }
+}
+
+jar {
+	baseName = project.property('build_base_name')
+	version = project.property('build_version')
+	manifest {
+		attributes "Implementation-Title": project.property('build_base_name'),
+				   "Implementation-Version": project.property('build_version')
+	}
+}
+
+springBoot {
+	mainClassName = 'com.kata.demo.MainClass'
+	buildInfo()
+}
+
+if (OperatingSystem.current().isWindows()) {
+	task pathingJar(type: Jar) {
+		dependsOn configurations.runtime
+		appendix = 'pathing'
+		
+		doFirst {
+			manifest {
+				attributes 'Class-Path' : configurations.runtime.files.collect {
+					it.toURL().toString().replaceFirst(/file:\/+/, '/')
+				}.join(' ')
+			}
+		}
+	}
+	
+	bootRun {
+		sourceResources sourceSets.main
+		dependsOn pathingJar
+		doFirst {
+			classpath = files("$buildDir/classes/main", "$buildDir/resources/main", pathingJar.archivePath)
+		}
+	}
+}else{
+	bootRun {
+		addResources = false
+	}
+}
+
+configurations {
+	all*.exclude group : 'org.springframework.boot', module : 'spring-boot-starter-logging'
+}
+
+repositories {
+      maven {
+            url "${maven_url}"
+            credentials {
+                  username = "${artifactory_user}"
+                  password = "${artifactory_password}"
+            }
+      }
+}
+
+dependencies {
+	compile "org.springframework.boot:spring-boot-starter:${springBootVersion}"
+	compile 'org.codehaus.groovy:groovy:+'
+	compile "org.apache.logging.log4j:log4j-1.2-api:2.13.3"
+	compile "org.apache.logging.log4j:log4j-api:2.13.3"
+    compile "org.apache.logging.log4j:log4j-core:2.13.3"
+    compile 'com.oracle:ojdbc7:12.1.0.1'
+	compile 'org.apache.commons:commons-lang3:3.2.1'
+	compile 'commons-io:commons-io:2.5'
+	compile "commons-lang:commons-lang:2.4"
+    compile "org.springframework:spring:5.2.8.RELEASE"
+	compile "org.springframework:spring-jdbc:5.2.8.RELEASE"
+	compile "org.springframework.boot:spring-boot-starter-log4j2:${springBootVersion}"
+	compile "com.fasterxml.jackson.core:jackson-annotations:2.9.9"
+    compile "com.fasterxml.jackson.core:jackson-core:2.9.9"
+    compile "com.fasterxml.jackson.core:jackson-databind:2.9.9"
+	compile "com.amazonaws:aws-java-sdk-s3:1.11.700"
+    //testImplementation 'junit:junit:4.13'
+    testImplementation "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
+    compileOnly "org.springframework.boot:spring-boot-devtools:${springBootVersion}"
+}
+
+clean {
+	delete "target"
+}
+
+test{
+	//useJUnitPlatform()
+}
+
+task stage(dependsOn : 'bootRepackage'){}

@@ -1,0 +1,15 @@
+# ====================================================================
+# Spring boot configuration for the "dev" profile.
+#
+# This configuration overrides the application.xml file.
+#
+# ====================================================================
+
+spring:
+    profiles:        active: dev
+    devtools:
+        restart:
+            enabled: true
+        livereload:            enabled: true
+
+        
